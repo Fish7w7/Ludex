@@ -1,0 +1,79 @@
+services:
+  api:
+    build:
+      context: ./backend/api
+      dockerfile: ../../docker/backend/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./backend/api:/var/www/html
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ludex
+      DB_USERNAME: ludex
+      DB_PASSWORD: ludex
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: cookie
+    depends_on:
+      - postgres
+      - redis
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+  queue:
+    build:
+      context: ./backend/api
+      dockerfile: ../../docker/backend/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./backend/api:/var/www/html
+    environment:
+      APP_ENV: local
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ludex
+      DB_USERNAME: ludex
+      DB_PASSWORD: ludex
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+    depends_on:
+      - postgres
+      - redis
+    command: php artisan queue:work --tries=3
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ludex
+      POSTGRES_USER: ludex
+      POSTGRES_PASSWORD: ludex
+    volumes:
+      - ludex-postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - ludex-redis:/data
+
+volumes:
+  ludex-postgres:
+  ludex-redis:

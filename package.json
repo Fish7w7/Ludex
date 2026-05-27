@@ -1,0 +1,23 @@
+{
+  "name": "ludex",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ludex universal desktop game launcher monorepo.",
+  "workspaces": [
+    "apps/desktop"
+  ],
+  "scripts": {
+    "desktop:dev": "npm --workspace apps/desktop run dev",
+    "desktop:tauri": "npm --workspace apps/desktop run tauri",
+    "desktop:build": "npm --workspace apps/desktop run build",
+    "desktop:test": "npm --workspace apps/desktop run test",
+    "backend:up": "docker compose up -d",
+    "backend:down": "docker compose down",
+    "backend:logs": "docker compose logs -f api"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}
+
