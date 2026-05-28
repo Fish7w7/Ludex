@@ -58,7 +58,9 @@ PATCH  /api/game-libraries/{gameLibrary}
 DELETE /api/game-libraries/{gameLibrary}
 ```
 
-Main fields: `user_id`, `platform_id`, `path`, `drive_letter`, `label`, `source`, `is_active`, `last_scanned_at`.
+Main fields: `platform_id`, `path`, `drive_letter`, `label`, `source`, `is_active`, `last_scanned_at`.
+
+`user_id` is server-managed from the authenticated token.
 
 ## User Games
 
@@ -72,7 +74,9 @@ PATCH  /api/user-games/{userGame}
 DELETE /api/user-games/{userGame}
 ```
 
-Main fields: `user_id`, `game_id`, `platform_id`, `library_id`, `install_path`, `executable_path`, `launch_command`, `is_favorite`, `last_played_at`, `total_playtime_seconds`, `source`, `external_id`, `metadata`.
+Main fields: `game_id`, `platform_id`, `library_id`, `install_path`, `executable_path`, `launch_command`, `is_favorite`, `last_played_at`, `total_playtime_seconds`, `source`, `external_id`, `metadata`.
+
+`user_id` is server-managed from the authenticated token.
 
 ## Sync
 

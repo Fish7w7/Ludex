@@ -11,7 +11,6 @@ class UserGameResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user_id' => $this->user_id,
             'game_id' => $this->game_id,
             'platform_id' => $this->platform_id,
             'library_id' => $this->library_id,

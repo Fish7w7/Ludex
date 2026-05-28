@@ -11,7 +11,6 @@ class GameLibraryResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user_id' => $this->user_id,
             'platform_id' => $this->platform_id,
             'path' => $this->path,
             'drive_letter' => $this->drive_letter,

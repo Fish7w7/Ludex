@@ -44,6 +44,8 @@ Use explicit ownership checks in controllers for Phase 2 user-owned resources.
 
 Rationale: Policies can still be introduced later, but explicit checks keep the current MVP small and make the security boundary easy to audit. Cross-user access returns `404` for user games, libraries, tags, scans, and play sessions.
 
+User-owned API resources do not expose `user_id` in normal JSON resources because the authenticated token already identifies the owner.
+
 ## 2026-05-27: Sync Identity Rules
 
 User game sync deduplicates by `user_id + platform_id + external_id` when an external platform ID exists, then falls back to `user_id + executable_path`.
