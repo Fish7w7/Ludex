@@ -43,7 +43,7 @@ class PlaySessionController extends Controller
 
         $session = $query->firstOrFail();
         $endedAt = Carbon::parse($request->validated('ended_at') ?? now());
-        $duration = max(0, $session->started_at->diffInSeconds($endedAt, false));
+        $duration = (int) max(0, floor($session->started_at->diffInSeconds($endedAt, false)));
 
         $session->update([
             'ended_at' => $endedAt,

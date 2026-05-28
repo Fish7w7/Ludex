@@ -1,0 +1,55 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { apiRequest, ApiError } from "./apiClient";
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" }
+  });
+}
+
+describe("apiRequest", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("sends the stored bearer token", async () => {
+    window.localStorage.setItem("ludex.authToken", "abc123");
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        jsonResponse({ ok: true })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiRequest<{ ok: boolean }>("/me");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8000/api/me",
+      expect.objectContaining({
+        headers: expect.any(Headers)
+      })
+    );
+    const [, requestOptions] = fetchMock.mock.calls[0];
+    const headers = requestOptions?.headers as Headers;
+    expect(headers.get("Authorization")).toBe("Bearer abc123");
+  });
+
+  it("normalizes unavailable API errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      })
+    );
+
+    await expect(apiRequest("/me")).rejects.toMatchObject({
+      message: "Não foi possível conectar à API do Ludex.",
+      status: 0
+    });
+  });
+});

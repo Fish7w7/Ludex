@@ -26,6 +26,33 @@ Signature: `ピコ~`
 - Scan logs.
 - Feature tests for the main API flows.
 
+## Phase 3 Scope
+
+- Desktop API client using `VITE_API_URL`.
+- Login, register, logout, and current-user loading from Laravel Sanctum tokens.
+- Library dashboard backed by `/api/platforms` and `/api/user-games`.
+- Game details, favorites, mock sync, and manual play-session testing.
+- Real scanners, executable launching, and offline storage remain out of scope.
+
+## Phase 4 Scope
+
+- ManualScanner flow in the desktop app.
+- User-confirmed `.exe` selection through Tauri.
+- Manual games synced through `/api/user-games/sync` with `source: manual`.
+- Safe local launch using the saved `executable_path`.
+- Manual play-session finish remains user-controlled.
+- Steam, Epic, Xbox scanners and automatic process detection remain out of scope.
+
+## Phase 5 Scope
+
+- Real Windows SteamScanner in the Tauri desktop.
+- Steam installation discovery through safe Windows registry/common-path candidates.
+- `libraryfolders.vdf` parsing for multiple Steam libraries across drives.
+- `appmanifest_*.acf` parsing for installed Steam games.
+- Steam sync through `/api/user-games/sync` with `external_id` set to the Steam `appid`.
+- Steam scans do not execute games and do not guess a main executable aggressively.
+- Epic, Xbox, secure token storage, offline mode, and automatic process detection remain out of scope.
+
 Docker is never a requirement for the final Ludex desktop user. It is only for backend development and deployment.
 
 ## Requirements
@@ -62,6 +89,26 @@ npm run backend:up
 npm run backend:down
 ```
 
+Desktop API URL:
+
+```bash
+VITE_API_URL=http://localhost:8000/api
+```
+
+For PowerShell:
+
+```powershell
+$env:VITE_API_URL="http://localhost:8000/api"
+npm run desktop:dev
+```
+
+Run the Tauri desktop shell when testing local file dialogs or launching:
+
+```powershell
+$env:VITE_API_URL="http://localhost:8000/api"
+npm run desktop:tauri
+```
+
 Backend commands inside Docker:
 
 ```bash
@@ -85,6 +132,80 @@ Health check:
 ```bash
 curl http://127.0.0.1:8000/api/health
 ```
+
+## Phase 3 Manual Test Flow
+
+1. Start the backend:
+
+```bash
+docker compose up -d --build
+docker compose exec api composer install
+docker compose exec api php artisan migrate:fresh --seed
+```
+
+2. Start the desktop web shell:
+
+```bash
+VITE_API_URL=http://localhost:8000/api npm run desktop:dev
+```
+
+For PowerShell, set `$env:VITE_API_URL` before running the command.
+
+3. Register or log in from the Ludex desktop.
+4. Click `Sync mock` or `Importar jogos mockados`.
+5. Confirm the library shows Counter-Strike 2, Hades, and Epic Seven.
+6. Open details, favorite/unfavorite a game, then start and finish a play session.
+
+## Phase 4 Manual Scanner Test Flow
+
+1. Start the backend and seed platforms:
+
+```bash
+docker compose up -d --build
+docker compose exec api composer install
+docker compose exec api php artisan migrate:fresh --seed
+```
+
+2. Start Tauri:
+
+```powershell
+$env:VITE_API_URL="http://localhost:8000/api"
+npm run desktop:tauri
+```
+
+3. Register or log in.
+4. Click `Adicionar jogo manual`.
+5. Click `Selecionar .exe` and choose a local Windows `.exe`.
+6. Confirm or edit the game name, then click `Adicionar à biblioteca`.
+7. Open the game details and use `Jogar` to launch it.
+8. Use `Finalizar` to close the manual play session in Ludex.
+9. Use `Abrir pasta` to open the saved install folder.
+
+## Phase 5 Steam Scanner Test Flow
+
+1. Start the backend and seed platforms:
+
+```bash
+docker compose up -d --build
+docker compose exec api composer install
+docker compose exec api php artisan migrate:fresh --seed
+```
+
+2. Start Tauri with the local API URL:
+
+```powershell
+$env:VITE_API_URL="http://localhost:8000/api"
+npm run desktop:tauri
+```
+
+3. Register or log in.
+4. Open `Scanners`.
+5. Click `Escanear Steam`.
+6. Review the detected Steam libraries and games.
+7. Select the games to import and click `Importar selecionados`.
+8. Return to the library and confirm the imported games appear.
+
+The SteamScanner reads Steam metadata files only. It does not launch Steam games during scanning.
 
 ## Project Layout
 
