@@ -95,7 +95,7 @@ npm run backend:up
 npm run backend:down
 ```
 
-`desktop:dist` builds the Windows NSIS installer with electron-builder. Generated installer artifacts are written to `apps/desktop/release`; Vite renderer assets stay in `apps/desktop/dist`.
+`desktop:dist` builds the Windows NSIS installer with electron-builder. Generated installer artifacts are written to `apps/desktop/dist/release`; Vite renderer assets stay in `apps/desktop/dist`.
 
 Desktop API URL:
 

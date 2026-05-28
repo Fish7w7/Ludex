@@ -21,10 +21,11 @@
     "productName": "Ludex",
     "electronVersion": "42.3.0",
     "directories": {
-      "output": "release"
+      "output": "dist/release"
     },
     "files": [
       "dist/**/*",
+      "!dist/release/**/*",
       "dist-electron/**/*",
       "package.json"
     ],

@@ -132,6 +132,6 @@ Rationale: These were direct dependencies and the API surface Ludex uses is stab
 
 ## 2026-05-28: Electron Build Output
 
-Electron Builder is configured for Windows NSIS output in `apps/desktop/release`.
+Electron Builder is configured for Windows NSIS output in `apps/desktop/dist/release`.
 
-Rationale: `apps/desktop/dist` is already the Vite renderer output. Keeping installers in `release` avoids packaging output colliding with renderer assets.
+Rationale: The user-facing build command should keep desktop artifacts under `dist`, while `!dist/release/**/*` prevents generated installers from being included recursively in the packaged app.
