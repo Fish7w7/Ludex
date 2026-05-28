@@ -34,9 +34,9 @@ Rationale: This keeps the foundation stable before adding launcher-specific file
 
 ## 2026-05-27: Desktop Frontend
 
-Use Vite for the React frontend inside Tauri.
+Use Vite for the React frontend inside the desktop app.
 
-Rationale: Vite is the default ergonomic path for React + Tauri development and keeps feedback loops fast.
+Rationale: Vite keeps React feedback loops fast and remains useful regardless of the native desktop shell.
 
 ## 2026-05-27: Backend User Data Ownership
 
@@ -60,7 +60,7 @@ Rationale: The desktop may store and validate local launch details later, but th
 
 ## 2026-05-28: Desktop API Integration
 
-The desktop consumes the Laravel API directly through a central Vite API client configured by `VITE_API_URL`, defaulting to `http://localhost:8000/api`.
+The desktop consumes the Laravel API directly through a central Vite API client configured by `VITE_API_URL`, defaulting to `http://127.0.0.1:8000/api`.
 
 Rationale: Phase 3 needs a functional client while keeping the API boundary explicit and easy to swap for packaged builds.
 
@@ -68,7 +68,7 @@ Rationale: Phase 3 needs a functional client while keeping the API boundary expl
 
 The desktop stores Sanctum bearer tokens in `localStorage` during Phase 3.
 
-Rationale: This keeps the integration simple for MVP testing. A future Tauri phase should move tokens to secure storage before production use.
+Rationale: This keeps the integration simple for MVP testing. A future desktop phase should move tokens to secure storage before production use.
 
 ## 2026-05-28: Scanner Scope During Desktop Integration
 
@@ -78,19 +78,19 @@ Rationale: The current goal is to prove the desktop-to-API-to-database flow befo
 
 ## 2026-05-28: Manual Scanner Execution Boundary
 
-Phase 4 implements ManualScanner as an explicit user-confirmed `.exe` selection flow in the Tauri desktop. Ludex validates that the selected path is local, exists, points to a file, and has a `.exe` extension before syncing or launching.
+Phase 4 implements ManualScanner as an explicit user-confirmed `.exe` selection flow in the desktop app. Ludex validates that the selected path is local, exists, points to a file, and has a `.exe` extension before syncing or launching.
 
 Rationale: Manual import is the smallest useful real scanner while keeping the user in control of exactly which executable is trusted.
 
 ## 2026-05-28: Local Launch Safety
 
-The desktop launches games with Rust `Command::new(executable_path)` and never builds a shell command string from API data. URLs, empty paths, and UNC/network paths are rejected in this phase.
+The desktop launches games from the native process and never builds a shell command string from API data. URLs, empty paths, and UNC/network paths are rejected in this phase.
 
 Rationale: The API stores metadata and paths, but local execution must remain a desktop-side decision guarded by filesystem validation.
 
 ## 2026-05-28: Steam Library Discovery
 
-Phase 5 implements Steam detection in the Tauri desktop by checking safe Steam root candidates from the Windows registry and common install locations, then reading `libraryfolders.vdf` for the actual library paths.
+Phase 5 implements Steam detection in the desktop native layer by checking safe Steam root candidates from the Windows registry and common install locations, then reading `libraryfolders.vdf` for the actual library paths.
 
 Rationale: Steam libraries can live on any drive. The scanner must discover real configured libraries instead of assuming `C:`, `D:`, or a fixed folder layout.
 
@@ -105,3 +105,33 @@ Rationale: App manifests are the stable Steam source for installed game metadata
 Phase 5 does not detect or execute a primary Steam game executable. A `steam://rungameid/{appid}` hint can be kept in metadata for future launch work, but the desktop does not send it as a trusted top-level `launch_command` in sync payloads.
 
 Rationale: The backend already rejects arbitrary launch commands, and Steam protocol launching needs a dedicated safety review before becoming an executable action.
+
+## 2026-05-28: Electron Migration
+
+The desktop native layer moved from Tauri/Rust to Electron main/preload IPC while preserving the React UI and Laravel API contract.
+
+Rationale: Electron is simpler for the current development flow and lets Ludex keep the already validated ManualScanner, SteamScanner, sync, launch, and reveal-folder behavior in TypeScript.
+
+## 2026-05-28: Electron IPC Boundary
+
+Electron exposes only a narrow preload API: manual executable selection, executable validation, launching, folder reveal, and Steam scan.
+
+Rationale: The renderer should not have raw Node.js access. Local filesystem and process operations stay in the main process behind explicit validation.
+
+## 2026-05-28: Electron Sandbox
+
+Electron windows use `contextIsolation: true`, `nodeIntegration: false`, and `sandbox: true`. The preload bridge exposes only the Ludex desktop API required by the renderer.
+
+Rationale: The renderer should behave like an untrusted web surface. Filesystem reads, process launch, dialogs, and Steam scanning stay behind explicit IPC channels in the main process.
+
+## 2026-05-28: Electron Dependency Audit
+
+The initial Electron migration audit found high-severity advisories in `electron`, `electron-builder`, and transitive packaging dependencies. We updated directly to `electron@42.3.0` and `electron-builder@26.8.1`.
+
+Rationale: These were direct dependencies and the API surface Ludex uses is stable across the update. `npm audit` now reports zero vulnerabilities.
+
+## 2026-05-28: Electron Build Output
+
+Electron Builder is configured for Windows NSIS output in `apps/desktop/release`.
+
+Rationale: `apps/desktop/dist` is already the Vite renderer output. Keeping installers in `release` avoids packaging output colliding with renderer assets.

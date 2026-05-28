@@ -7,7 +7,7 @@ Signature: `ピコ~`
 ## Phase 1 Scope
 
 - Monorepo structure with `apps/desktop` and `backend/api`.
-- Tauri + React + TypeScript + TailwindCSS desktop shell.
+- Desktop shell foundation with React + TypeScript + TailwindCSS.
 - Laravel API skeleton prepared for Sanctum, PostgreSQL, Redis, queues, and REST routes.
 - Docker Compose for backend development/deploy only.
 - Scanner contracts and mock/stub strategy only. Real Steam/Epic/Xbox scanning stays out of Phase 1.
@@ -37,7 +37,7 @@ Signature: `ピコ~`
 ## Phase 4 Scope
 
 - ManualScanner flow in the desktop app.
-- User-confirmed `.exe` selection through Tauri.
+- User-confirmed `.exe` selection through the desktop native layer.
 - Manual games synced through `/api/user-games/sync` with `source: manual`.
 - Safe local launch using the saved `executable_path`.
 - Manual play-session finish remains user-controlled.
@@ -45,13 +45,20 @@ Signature: `ピコ~`
 
 ## Phase 5 Scope
 
-- Real Windows SteamScanner in the Tauri desktop.
+- Real Windows SteamScanner in the Electron desktop.
 - Steam installation discovery through safe Windows registry/common-path candidates.
 - `libraryfolders.vdf` parsing for multiple Steam libraries across drives.
 - `appmanifest_*.acf` parsing for installed Steam games.
 - Steam sync through `/api/user-games/sync` with `external_id` set to the Steam `appid`.
 - Steam scans do not execute games and do not guess a main executable aggressively.
 - Epic, Xbox, secure token storage, offline mode, and automatic process detection remain out of scope.
+
+## Electron Migration Scope
+
+- Replaced Tauri/Rust native commands with Electron main/preload IPC.
+- Preserved the current React UI, API client, auth state, sync mock, ManualScanner, SteamScanner, favorites, details, and play sessions.
+- Moved native desktop code to `apps/desktop/electron`.
+- Laravel API and Docker backend remain unchanged.
 
 Docker is never a requirement for the final Ludex desktop user. It is only for backend development and deployment.
 
@@ -61,7 +68,6 @@ Development expects these tools locally when running everything outside Docker:
 
 - Node.js 22+
 - npm
-- Rust toolchain for Tauri builds
 - PHP 8.3+ and Composer for Laravel work outside Docker
 - Docker Desktop for backend development services
 
@@ -84,29 +90,31 @@ npm install
 npm run desktop:dev
 npm run desktop:test
 npm run desktop:build
-npm run desktop:tauri
+npm run desktop:dist
 npm run backend:up
 npm run backend:down
 ```
 
+`desktop:dist` builds the Windows NSIS installer with electron-builder. Generated installer artifacts are written to `apps/desktop/release`; Vite renderer assets stay in `apps/desktop/dist`.
+
 Desktop API URL:
 
 ```bash
-VITE_API_URL=http://localhost:8000/api
+VITE_API_URL=http://127.0.0.1:8000/api
 ```
 
 For PowerShell:
 
 ```powershell
-$env:VITE_API_URL="http://localhost:8000/api"
+$env:VITE_API_URL="http://127.0.0.1:8000/api"
 npm run desktop:dev
 ```
 
-Run the Tauri desktop shell when testing local file dialogs or launching:
+Run the Electron desktop shell when testing local file dialogs, Steam scan, or launching:
 
 ```powershell
-$env:VITE_API_URL="http://localhost:8000/api"
-npm run desktop:tauri
+$env:VITE_API_URL="http://127.0.0.1:8000/api"
+npm run desktop:dev
 ```
 
 Backend commands inside Docker:
@@ -146,7 +154,7 @@ docker compose exec api php artisan migrate:fresh --seed
 2. Start the desktop web shell:
 
 ```bash
-VITE_API_URL=http://localhost:8000/api npm run desktop:dev
+VITE_API_URL=http://127.0.0.1:8000/api npm run desktop:dev
 ```
 
 For PowerShell, set `$env:VITE_API_URL` before running the command.
@@ -166,11 +174,11 @@ docker compose exec api composer install
 docker compose exec api php artisan migrate:fresh --seed
 ```
 
-2. Start Tauri:
+2. Start Electron:
 
 ```powershell
-$env:VITE_API_URL="http://localhost:8000/api"
-npm run desktop:tauri
+$env:VITE_API_URL="http://127.0.0.1:8000/api"
+npm run desktop:dev
 ```
 
 3. Register or log in.
@@ -191,11 +199,11 @@ docker compose exec api composer install
 docker compose exec api php artisan migrate:fresh --seed
 ```
 
-2. Start Tauri with the local API URL:
+2. Start Electron with the local API URL:
 
 ```powershell
-$env:VITE_API_URL="http://localhost:8000/api"
-npm run desktop:tauri
+$env:VITE_API_URL="http://127.0.0.1:8000/api"
+npm run desktop:dev
 ```
 
 3. Register or log in.
@@ -210,7 +218,7 @@ The SteamScanner reads Steam metadata files only. It does not launch Steam games
 ## Project Layout
 
 ```txt
-apps/desktop    Tauri + React desktop application
+apps/desktop    Electron + React desktop application
 backend/api     Laravel REST API
 docs            Architecture, scanner, security, API and decision docs
 docker          Backend development/deploy container files

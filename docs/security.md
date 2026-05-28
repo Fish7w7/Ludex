@@ -16,9 +16,25 @@ The desktop should validate executable paths before launching:
 - URLs are rejected.
 - UNC/network paths are rejected in the current MVP.
 
+## Electron IPC Safety
+
+The desktop uses Electron with `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and a small preload bridge exposed as `window.ludexDesktop`.
+
+Only explicit IPC methods are exposed:
+
+- select manual `.exe`;
+- validate executable path;
+- launch validated executable;
+- reveal validated file/folder;
+- scan Steam metadata.
+
+The renderer does not receive Node.js filesystem or process access.
+
+IPC path arguments are checked for type before they reach filesystem or process services. Non-string path arguments are rejected in the main process.
+
 ## Manual Launch Safety
 
-Phase 4 uses Tauri commands to select, validate, reveal, and launch local paths. The launch command uses Rust process APIs directly with the executable path as the program and the executable folder as the working directory. Ludex does not execute `launch_command` from the API.
+Manual launch uses Electron main-process services to select, validate, reveal, and launch local paths. The launch service uses `child_process.spawn(executable_path, [], { shell: false })` with the executable folder as the working directory. Ludex does not execute `launch_command` from the API.
 
 ## Steam Scanner Safety
 
@@ -42,3 +58,9 @@ The Laravel API should enforce:
 ## Sync Safety
 
 Sync payloads should be treated as untrusted input. Server-side IDs, ownership, timestamps, and conflict decisions must be validated on the API.
+
+## NPM Audit
+
+Post-migration audit initially reported high-severity issues in direct `electron` and `electron-builder` dependencies plus transitive build tooling (`tar`, `node-gyp`, `app-builder-lib`). These affected the Electron runtime and packaging toolchain.
+
+The fix was a deliberate dependency update, not `npm audit fix`: `electron` is pinned to `42.3.0` and `electron-builder` is updated to `26.8.1`. After the update, `npm audit` reports zero vulnerabilities.
