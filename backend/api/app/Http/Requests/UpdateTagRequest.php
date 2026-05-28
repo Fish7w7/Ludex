@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreTagRequest extends FormRequest
+class UpdateTagRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -19,7 +19,9 @@ class StoreTagRequest extends FormRequest
                 'required',
                 'string',
                 'max:60',
-                Rule::unique('tags', 'name')->where(fn ($query) => $query->where('user_id', $this->user()->id)),
+                Rule::unique('tags', 'name')
+                    ->where(fn ($query) => $query->where('user_id', $this->user()->id))
+                    ->ignore($this->route('tag')),
             ],
             'color' => ['nullable', 'string', 'max:32'],
         ];

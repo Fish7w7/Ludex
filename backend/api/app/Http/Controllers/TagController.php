@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTagRequest;
+use App\Http\Requests\UpdateTagRequest;
 use App\Http\Resources\TagResource;
 use App\Models\Tag;
 use Illuminate\Http\JsonResponse;
@@ -33,7 +34,7 @@ class TagController extends Controller
         return response()->json(['data' => TagResource::make($tag)]);
     }
 
-    public function update(StoreTagRequest $request, Tag $tag): JsonResponse
+    public function update(UpdateTagRequest $request, Tag $tag): JsonResponse
     {
         abort_unless($tag->user_id === $request->user()->id, 404);
 
