@@ -31,7 +31,24 @@ it('manages tags scoped to the authenticated user', function () {
         ->getJson("/api/tags/{$tag['id']}")
         ->assertNotFound();
 
+    $this->actingAs($other)
+        ->deleteJson("/api/tags/{$tag['id']}")
+        ->assertNotFound();
+
     expect(Tag::query()->where('user_id', $user->id)->count())->toBe(1);
+});
+
+it('validates duplicate tag names per user', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson('/api/tags', ['name' => 'Backlog'])
+        ->assertCreated();
+
+    $this->actingAs($user)
+        ->postJson('/api/tags', ['name' => 'Backlog'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('name');
 });
 
 it('stores and lists scan logs scoped to the authenticated user', function () {
@@ -58,5 +75,6 @@ it('stores and lists scan logs scoped to the authenticated user', function () {
     $this->actingAs($user)
         ->getJson('/api/scans')
         ->assertOk()
-        ->assertJsonCount(1, 'data');
+        ->assertJsonCount(1, 'data')
+        ->assertJsonMissing(['games_found' => 99]);
 });

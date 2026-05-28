@@ -62,6 +62,21 @@ it('does not duplicate user games when syncing the same external id twice', func
         ->count())->toBe(1);
 });
 
+it('does not duplicate user games without external id when executable path matches', function () {
+    $this->seed(PlatformSeeder::class);
+    $user = User::factory()->create();
+    $payload = steamPayload();
+    unset($payload['games'][0]['external_id']);
+
+    $this->actingAs($user)->postJson('/api/user-games/sync', $payload)->assertOk();
+    $this->actingAs($user)->postJson('/api/user-games/sync', $payload)->assertOk();
+
+    expect(UserGame::query()
+        ->where('user_id', $user->id)
+        ->where('executable_path', $payload['games'][0]['executable_path'])
+        ->count())->toBe(1);
+});
+
 it('rejects launch commands in sync payloads', function () {
     $this->seed(PlatformSeeder::class);
     $user = User::factory()->create();

@@ -32,7 +32,8 @@ class PlaySessionController extends Controller
 
         $query = PlaySession::query()
             ->where('user_id', $request->user()->id)
-            ->where('user_game_id', $userGame->id);
+            ->where('user_game_id', $userGame->id)
+            ->whereNull('ended_at');
 
         if ($request->validated('play_session_id')) {
             $query->where('id', $request->validated('play_session_id'));
