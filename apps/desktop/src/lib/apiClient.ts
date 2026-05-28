@@ -1,6 +1,6 @@
 import { clearAuthToken, getAuthToken } from "./tokenStore";
 
-const DEFAULT_API_URL = "http://localhost:8000/api";
+const DEFAULT_API_URL = "http://127.0.0.1:8000/api";
 
 export const apiBaseUrl =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
@@ -25,6 +25,23 @@ type ApiRequestOptions = Omit<RequestInit, "body"> & {
 function normalizeErrorMessage(payload: unknown): string {
   if (typeof payload !== "object" || payload === null) {
     return "Não foi possível processar a resposta da API.";
+  }
+
+  const maybeErrors = "errors" in payload ? payload.errors : undefined;
+  if (typeof maybeErrors === "object" && maybeErrors !== null) {
+    const messages = Object.entries(maybeErrors)
+      .flatMap(([field, value]) => {
+        if (Array.isArray(value)) {
+          return value.map((message) => `${field}: ${String(message)}`);
+        }
+
+        return [`${field}: ${String(value)}`];
+      })
+      .filter(Boolean);
+
+    if (messages.length > 0) {
+      return messages.join(" ");
+    }
   }
 
   const maybeMessage = "message" in payload ? payload.message : undefined;
@@ -81,4 +98,3 @@ export async function apiRequest<T>(
 
   return payload as T;
 }
-

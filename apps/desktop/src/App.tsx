@@ -27,8 +27,8 @@ import {
   isWindowsExecutablePath
 } from "./features/manual/manualGame";
 import { steamGameToSyncGame } from "./features/scanner/steamScanner";
-import { tauriCommands } from "./lib/tauriCommands";
-import type { SteamDetectedGame } from "./lib/tauriCommands";
+import { desktopCommands } from "./lib/desktopCommands";
+import type { SteamDetectedGame } from "./lib/desktopCommands";
 import type { Platform, UserGame } from "./types/api";
 
 type ActiveView = "library" | "scanner" | "favorites" | "settings";
@@ -100,10 +100,12 @@ function platformName(userGame: UserGame): string {
 
 function AuthScreen() {
   const { login, register, error, clearError } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register">("register");
   const [name, setName] = useState("Jogador Ludex");
-  const [email, setEmail] = useState("demo@ludex.local");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState(
+    () => `jogador-${Date.now()}@ludex.local`
+  );
+  const [password, setPassword] = useState("password1234");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -335,7 +337,7 @@ function LibraryDashboard() {
     }));
 
     try {
-      const result = await tauriCommands.scanSteamGames();
+      const result = await desktopCommands.scanSteamGames();
       setSteamScanner({
         status: "success",
         error: null,
@@ -427,7 +429,7 @@ function LibraryDashboard() {
     setError(null);
     setNotice(null);
 
-    const validation = await tauriCommands.validateExecutablePath(draft.executablePath);
+    const validation = await desktopCommands.validateExecutablePath(draft.executablePath);
     const manualGame = buildManualSyncGame({
       name: draft.name,
       executablePath: validation.executable_path,
@@ -493,7 +495,7 @@ function LibraryDashboard() {
     setIsLaunchingGameId(userGame.id);
 
     try {
-      await tauriCommands.launchGame(userGame.executable_path);
+      await desktopCommands.launchGame(userGame.executable_path);
       const session = await ludexApi.startPlaySession(userGame.id);
       setActiveSessions((sessions) => ({
         ...sessions,
@@ -524,7 +526,7 @@ function LibraryDashboard() {
     setIsRevealingGameId(userGame.id);
 
     try {
-      await tauriCommands.revealGameInFolder(path);
+      await desktopCommands.revealGameInFolder(path);
       setNotice(`Pasta aberta para ${gameName(userGame)}.`);
     } catch (requestError) {
       setError(
@@ -1095,7 +1097,7 @@ function ManualGameModal({
     setIsSelecting(true);
 
     try {
-      const selected = await tauriCommands.selectManualExecutable();
+      const selected = await desktopCommands.selectManualExecutable();
       if (!selected) {
         return;
       }

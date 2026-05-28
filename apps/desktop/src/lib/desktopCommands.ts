@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
-
 export type ManualExecutableSelection = {
   executable_path: string;
   install_path: string;
@@ -32,45 +30,46 @@ export type SteamScanResult = {
   games: SteamDetectedGame[];
 };
 
-function isTauriRuntime(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "__TAURI_INTERNALS__" in (window as typeof window & { __TAURI_INTERNALS__?: unknown })
-  );
+export type LudexDesktopApi = {
+  selectManualExecutable: () => Promise<ManualExecutableSelection | null>;
+  validateExecutablePath: (executablePath: string) => Promise<ExecutableValidation>;
+  launchGame: (executablePath: string) => Promise<string>;
+  revealGameInFolder: (path: string) => Promise<string>;
+  scanSteamGames: () => Promise<SteamScanResult>;
+};
+
+declare global {
+  interface Window {
+    ludexDesktop?: LudexDesktopApi;
+  }
 }
 
-async function invokeTauri<T>(command: string, args?: Record<string, unknown>): Promise<T> {
-  if (!isTauriRuntime()) {
+function desktopApi(): LudexDesktopApi {
+  if (!window.ludexDesktop) {
     throw new Error("Este recurso só funciona no app desktop do Ludex.");
   }
 
-  return invoke<T>(command, args);
+  return window.ludexDesktop;
 }
 
-export const tauriCommands = {
+export const desktopCommands = {
   selectManualExecutable(): Promise<ManualExecutableSelection | null> {
-    return invokeTauri<ManualExecutableSelection | null>("select_manual_executable");
+    return desktopApi().selectManualExecutable();
   },
 
   validateExecutablePath(executablePath: string): Promise<ExecutableValidation> {
-    return invokeTauri<ExecutableValidation>("validate_executable_path", {
-      executablePath
-    });
+    return desktopApi().validateExecutablePath(executablePath);
   },
 
   launchGame(executablePath: string): Promise<string> {
-    return invokeTauri<string>("launch_game", {
-      executablePath
-    });
+    return desktopApi().launchGame(executablePath);
   },
 
   revealGameInFolder(path: string): Promise<string> {
-    return invokeTauri<string>("reveal_game_in_folder", {
-      path
-    });
+    return desktopApi().revealGameInFolder(path);
   },
 
   scanSteamGames(): Promise<SteamScanResult> {
-    return invokeTauri<SteamScanResult>("scan_steam_games");
+    return desktopApi().scanSteamGames();
   }
 };

@@ -8,8 +8,8 @@
   ],
   "scripts": {
     "desktop:dev": "npm --workspace apps/desktop run dev",
-    "desktop:tauri": "npm --workspace apps/desktop run tauri",
     "desktop:build": "npm --workspace apps/desktop run build",
+    "desktop:dist": "npm --workspace apps/desktop run dist",
     "desktop:test": "npm --workspace apps/desktop run test",
     "backend:up": "docker compose up -d",
     "backend:down": "docker compose down",
@@ -20,4 +20,3 @@
     "npm": ">=10.0.0"
   }
 }
-

@@ -4,7 +4,9 @@ vendor/
 .env.*
 !.env.example
 dist/
+dist-electron/
 build/
+release/
 coverage/
 storage/logs/*.log
 storage/framework/cache/*
@@ -15,8 +17,6 @@ backend/api/storage/framework/cache/*
 backend/api/storage/framework/sessions/*
 backend/api/storage/framework/views/*
 backend/api/bootstrap/cache/*.php
-apps/desktop/src-tauri/target/
 *.local
 *.tmp
 *.log
-

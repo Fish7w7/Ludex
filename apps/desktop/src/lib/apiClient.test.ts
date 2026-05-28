@@ -29,7 +29,7 @@ describe("apiRequest", () => {
     await apiRequest<{ ok: boolean }>("/me");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8000/api/me",
+      "http://127.0.0.1:8000/api/me",
       expect.objectContaining({
         headers: expect.any(Headers)
       })
@@ -50,6 +50,29 @@ describe("apiRequest", () => {
     await expect(apiRequest("/me")).rejects.toMatchObject({
       message: "Não foi possível conectar à API do Ludex.",
       status: 0
+    });
+  });
+
+  it("shows Laravel validation details", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse(
+          {
+            message: "The selected games.0.platform is invalid.",
+            errors: {
+              "games.0.platform": ["The selected games.0.platform is invalid."]
+            }
+          },
+          422
+        )
+      )
+    );
+
+    await expect(apiRequest("/user-games/sync", { method: "POST" })).rejects.toMatchObject({
+      message:
+        "games.0.platform: The selected games.0.platform is invalid.",
+      status: 422
     });
   });
 });

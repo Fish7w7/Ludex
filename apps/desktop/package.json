@@ -2,29 +2,52 @@
   "name": "@ludex/desktop",
   "version": "0.1.0",
   "private": true,
+  "description": "Ludex desktop game launcher.",
+  "author": "Ludex",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "tsc && vite build",
+    "dev": "node electron/dev.mjs",
+    "renderer:dev": "vite --host 127.0.0.1",
+    "electron:build": "tsc -p tsconfig.electron.json && node electron/write-cjs-package.mjs",
+    "electron:start": "npm run electron:build && electron dist-electron/main.js",
+    "build": "tsc && vite build && npm run electron:build",
+    "dist": "npm run build && electron-builder",
     "preview": "vite preview",
-    "tauri": "tauri dev",
     "test": "vitest run"
   },
+  "main": "dist-electron/main.js",
+  "build": {
+    "appId": "app.ludex.desktop",
+    "productName": "Ludex",
+    "electronVersion": "42.3.0",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  },
   "dependencies": {
-    "@tauri-apps/api": "^2.0.0",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "electron": "42.3.0",
+    "electron-builder": "^26.8.1",
     "jsdom": "^25.0.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",

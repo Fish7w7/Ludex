@@ -1,4 +1,4 @@
-import type { SteamDetectedGame } from "../../lib/tauriCommands";
+import type { SteamDetectedGame } from "../../lib/desktopCommands";
 import type { SyncDetectedGame } from "../../types/api";
 
 export function steamGameToSyncGame(game: SteamDetectedGame): SyncDetectedGame {

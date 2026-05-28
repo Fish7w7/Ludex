@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
-const tauriMocks = vi.hoisted(() => ({
+const desktopMocks = vi.hoisted(() => ({
   launchGame: vi.fn(),
   revealGameInFolder: vi.fn(),
   scanSteamGames: vi.fn(),
@@ -11,8 +11,8 @@ const tauriMocks = vi.hoisted(() => ({
   validateExecutablePath: vi.fn()
 }));
 
-vi.mock("./lib/tauriCommands", () => ({
-  tauriCommands: tauriMocks
+vi.mock("./lib/desktopCommands", () => ({
+  desktopCommands: desktopMocks
 }));
 
 const user = {
@@ -196,7 +196,7 @@ function mockAuthenticatedApi(games = [userGame]) {
 describe("App", () => {
   beforeEach(() => {
     window.localStorage.clear();
-    Object.values(tauriMocks).forEach((mock) => mock.mockReset());
+    Object.values(desktopMocks).forEach((mock) => mock.mockReset());
     vi.restoreAllMocks();
   });
 
@@ -248,7 +248,7 @@ describe("App", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "http://localhost:8000/api/user-games/10/favorite",
+        "http://127.0.0.1:8000/api/user-games/10/favorite",
         expect.objectContaining({
           method: "POST"
         })
@@ -258,7 +258,7 @@ describe("App", () => {
 
   it("syncs a manually added executable with the API payload", async () => {
     const fetchMock = mockAuthenticatedApi([]);
-    tauriMocks.validateExecutablePath.mockResolvedValue({
+    desktopMocks.validateExecutablePath.mockResolvedValue({
       executable_path: "D:\\Games\\Meu Jogo\\game.exe",
       install_path: "D:\\Games\\Meu Jogo",
       file_name: "game.exe"
@@ -279,7 +279,7 @@ describe("App", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "http://localhost:8000/api/user-games/sync",
+        "http://127.0.0.1:8000/api/user-games/sync",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({
@@ -314,12 +314,12 @@ describe("App", () => {
     expect(
       await screen.findByText("O jogo selecionado não tem um executável local salvo.")
     ).toBeInTheDocument();
-    expect(tauriMocks.launchGame).not.toHaveBeenCalled();
+    expect(desktopMocks.launchGame).not.toHaveBeenCalled();
   });
 
-  it("launches a game through Tauri and starts a play session", async () => {
+  it("launches a game through Electron and starts a play session", async () => {
     const fetchMock = mockAuthenticatedApi();
-    tauriMocks.launchGame.mockResolvedValue("ok");
+    desktopMocks.launchGame.mockResolvedValue("ok");
     window.localStorage.setItem("ludex.authToken", "test-token");
     vi.stubGlobal("fetch", fetchMock);
 
@@ -329,18 +329,18 @@ describe("App", () => {
     await userEvent.click(screen.getByText("Jogar"));
 
     await waitFor(() => {
-      expect(tauriMocks.launchGame).toHaveBeenCalledWith(
+      expect(desktopMocks.launchGame).toHaveBeenCalledWith(
         "D:\\SteamLibrary\\steamapps\\common\\Hades\\x64\\Hades.exe"
       );
       expect(fetchMock).toHaveBeenCalledWith(
-        "http://localhost:8000/api/user-games/10/play-sessions/start",
+        "http://127.0.0.1:8000/api/user-games/10/play-sessions/start",
         expect.objectContaining({ method: "POST" })
       );
     });
   });
 
   it("shows Steam games found before importing", async () => {
-    tauriMocks.scanSteamGames.mockResolvedValue({
+    desktopMocks.scanSteamGames.mockResolvedValue({
       steam_path: "C:\\Program Files (x86)\\Steam",
       libraries: [{ path: "D:\\SteamLibrary", manifest_count: 1 }],
       games: [steamDetectedGame]
@@ -363,7 +363,7 @@ describe("App", () => {
 
   it("imports selected Steam games with platform steam", async () => {
     const fetchMock = mockAuthenticatedApi([]);
-    tauriMocks.scanSteamGames.mockResolvedValue({
+    desktopMocks.scanSteamGames.mockResolvedValue({
       steam_path: "C:\\Program Files (x86)\\Steam",
       libraries: [{ path: "D:\\SteamLibrary", manifest_count: 1 }],
       games: [steamDetectedGame]
@@ -383,7 +383,7 @@ describe("App", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "http://localhost:8000/api/user-games/sync",
+        "http://127.0.0.1:8000/api/user-games/sync",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({
@@ -406,7 +406,7 @@ describe("App", () => {
   });
 
   it("shows a friendly Steam not found error", async () => {
-    tauriMocks.scanSteamGames.mockRejectedValue(
+    desktopMocks.scanSteamGames.mockRejectedValue(
       new Error("Steam não encontrada neste computador.")
     );
     window.localStorage.setItem("ludex.authToken", "test-token");
