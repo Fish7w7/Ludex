@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, Menu, ipcMain } from "electron";
 import path from "node:path";
 import {
   selectManualExecutable,
@@ -6,6 +6,7 @@ import {
 } from "./scanners/manual/manualScanner.js";
 import { ipcChannels, requireStringArgument } from "./ipc.js";
 import { launchGame, revealGameInFolder } from "./services/launcher.js";
+import { EpicScanner } from "./scanners/epic/epicScanner.js";
 import { SteamScanner } from "./scanners/steam/steamScanner.js";
 
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL);
@@ -16,7 +17,7 @@ function createWindow(): void {
     height: 820,
     minWidth: 1040,
     minHeight: 680,
-    title: "Ludex ピコ~",
+    title: "Ludex",
     backgroundColor: "#080912",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -45,9 +46,11 @@ function registerIpcHandlers(): void {
     revealGameInFolder(requireStringArgument(candidate, "path"))
   );
   ipcMain.handle(ipcChannels.scanSteamGames, () => new SteamScanner().scanInstalledGames());
+  ipcMain.handle(ipcChannels.scanEpicGames, () => new EpicScanner().scanInstalledGames());
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   registerIpcHandlers();
   createWindow();
 

@@ -31,3 +31,21 @@ export type SteamScanResult = {
   libraries: SteamLibrary[];
   games: SteamDetectedGame[];
 };
+
+export type EpicDetectedGame = {
+  name: string;
+  platform: "epic";
+  source: "epic";
+  external_id: string | null;
+  install_path: string;
+  executable_path: string | null;
+  launch_command: null;
+  metadata: Record<string, string>;
+};
+
+export type EpicScanResult = {
+  manifests_path: string;
+  manifests_found: number;
+  ignored_manifests: number;
+  games: EpicDetectedGame[];
+};

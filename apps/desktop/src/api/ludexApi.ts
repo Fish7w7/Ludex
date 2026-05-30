@@ -112,6 +112,16 @@ export const ludexApi = {
     });
   },
 
+  syncEpicGames(games: SyncDetectedGame[]): Promise<SyncUserGamesResponse> {
+    return apiRequest<SyncUserGamesResponse>("/user-games/sync", {
+      method: "POST",
+      body: {
+        source: "epic",
+        games
+      }
+    });
+  },
+
   async favoriteUserGame(id: number): Promise<UserGame> {
     const response = await apiRequest<ApiEnvelope<UserGame>>(
       `/user-games/${id}/favorite`,

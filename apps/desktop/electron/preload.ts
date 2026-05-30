@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type {
+  EpicScanResult,
   ExecutableValidation,
   ManualExecutableSelection,
   SteamScanResult
@@ -20,7 +21,10 @@ const desktopApi = {
     ipcRenderer.invoke(ipcChannels.revealGameInFolder, path),
 
   scanSteamGames: (): Promise<SteamScanResult> =>
-    ipcRenderer.invoke(ipcChannels.scanSteamGames)
+    ipcRenderer.invoke(ipcChannels.scanSteamGames),
+
+  scanEpicGames: (): Promise<EpicScanResult> =>
+    ipcRenderer.invoke(ipcChannels.scanEpicGames)
 };
 
 contextBridge.exposeInMainWorld("ludexDesktop", desktopApi);

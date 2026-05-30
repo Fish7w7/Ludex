@@ -22,6 +22,10 @@ type ApiRequestOptions = Omit<RequestInit, "body"> & {
   skipAuth?: boolean;
 };
 
+function isPlatformValidationError(errors: Record<string, unknown>): boolean {
+  return Object.keys(errors).some((field) => /^games\.\d+\.platform$/.test(field));
+}
+
 function normalizeErrorMessage(payload: unknown): string {
   if (typeof payload !== "object" || payload === null) {
     return "Não foi possível processar a resposta da API.";
@@ -29,6 +33,10 @@ function normalizeErrorMessage(payload: unknown): string {
 
   const maybeErrors = "errors" in payload ? payload.errors : undefined;
   if (typeof maybeErrors === "object" && maybeErrors !== null) {
+    if (isPlatformValidationError(maybeErrors as Record<string, unknown>)) {
+      return "Não foi possível importar os jogos. Verifique se as plataformas estão cadastradas no backend.";
+    }
+
     const messages = Object.entries(maybeErrors)
       .flatMap(([field, value]) => {
         if (Array.isArray(value)) {
@@ -46,6 +54,10 @@ function normalizeErrorMessage(payload: unknown): string {
 
   const maybeMessage = "message" in payload ? payload.message : undefined;
   if (typeof maybeMessage === "string") {
+    if (maybeMessage.toLowerCase().includes("unauthenticated")) {
+      return "Sua sessão expirou. Faça login novamente.";
+    }
+
     return maybeMessage;
   }
 
@@ -91,6 +103,7 @@ export async function apiRequest<T>(
   if (!response.ok) {
     if (response.status === 401) {
       clearAuthToken();
+      throw new ApiError("Sua sessão expirou. Faça login novamente.", response.status, payload);
     }
 
     throw new ApiError(normalizeErrorMessage(payload), response.status, payload);

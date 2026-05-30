@@ -58,12 +58,31 @@ The scanner returns friendly errors when Steam is missing, `libraryfolders.vdf` 
 - `launch_game`: `child_process.spawn` with `shell: false` after executable validation.
 - `reveal_game_in_folder`: `shell.showItemInFolder` for files or `shell.openPath` for folders.
 - `scan_steam_games`: TypeScript SteamScanner in the main process.
+- `scan_epic_games`: TypeScript EpicScanner in the main process.
 
 All path-taking IPC handlers validate argument type in the main process before calling scanner or launcher services.
 
-## Future Epic Games Scanner
+## Phase 6 EpicScanner
 
-The Epic scanner should read manifests under ProgramData and extract install locations. This remains out of Phase 1.
+EpicScanner is implemented in the Electron main process for Windows.
+
+It:
+
+- Looks for Epic manifests under `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests`.
+- Reads `.item` JSON manifest files.
+- Ignores corrupt manifests.
+- Ignores manifests without a valid existing `InstallLocation`.
+- Uses `InstallLocation` from the manifest instead of assuming games are on `C:`.
+- Normalizes each game with `platform: epic`, `source: epic`, and `external_id` set to `CatalogItemId` when available, otherwise `AppName`.
+
+Epic executable paths are only kept when `LaunchExecutable` can be safely resolved:
+
+- relative to `InstallLocation`, or absolute but still inside `InstallLocation`;
+- not a URL or UNC path;
+- `.exe` extension;
+- existing file.
+
+The scanner does not execute anything, does not trust `LaunchCommand`, and does not scan arbitrary drives. If `LaunchExecutable` is absent or unsafe, `executable_path` stays `null` and the game can still be imported for library tracking.
 
 ## Future Xbox Scanner
 

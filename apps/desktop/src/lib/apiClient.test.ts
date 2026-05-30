@@ -53,7 +53,7 @@ describe("apiRequest", () => {
     });
   });
 
-  it("shows Laravel validation details", async () => {
+  it("shows a friendly platform validation error", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -71,8 +71,22 @@ describe("apiRequest", () => {
 
     await expect(apiRequest("/user-games/sync", { method: "POST" })).rejects.toMatchObject({
       message:
-        "games.0.platform: The selected games.0.platform is invalid.",
+        "Não foi possível importar os jogos. Verifique se as plataformas estão cadastradas no backend.",
       status: 422
     });
+  });
+
+  it("normalizes expired session errors", async () => {
+    window.localStorage.setItem("ludex.authToken", "expired-token");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({ message: "Unauthenticated." }, 401))
+    );
+
+    await expect(apiRequest("/me")).rejects.toMatchObject({
+      message: "Sua sessão expirou. Faça login novamente.",
+      status: 401
+    });
+    expect(window.localStorage.getItem("ludex.authToken")).toBeNull();
   });
 });

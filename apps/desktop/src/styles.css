@@ -24,6 +24,30 @@ button {
   font: inherit;
 }
 
+.input-surface {
+  width: 100%;
+  border-radius: 0.875rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.06);
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.input-surface::placeholder {
+  color: #9ca3c7;
+}
+
+.input-surface:focus {
+  border-color: rgb(40 244 255 / 0.55);
+  background: rgb(255 255 255 / 0.08);
+  box-shadow: 0 0 0 2px rgb(40 244 255 / 0.2);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -34,4 +58,3 @@ button {
     animation-iteration-count: 1 !important;
   }
 }
-

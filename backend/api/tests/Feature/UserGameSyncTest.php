@@ -88,3 +88,17 @@ it('rejects launch commands in sync payloads', function () {
         ->assertUnprocessable()
         ->assertJsonValidationErrors('games.0.launch_command');
 });
+
+it('accepts platform slugs when syncing detected games', function () {
+    $this->seed(PlatformSeeder::class);
+    $user = User::factory()->create();
+    $payload = steamPayload();
+    $payload['source'] = 'epic';
+    $payload['games'][0]['platform'] = 'epic';
+    $payload['games'][0]['external_id'] = 'catalog-123';
+
+    $this->actingAs($user)
+        ->postJson('/api/user-games/sync', $payload)
+        ->assertOk()
+        ->assertJsonPath('data.0.platform.slug', 'epic');
+});

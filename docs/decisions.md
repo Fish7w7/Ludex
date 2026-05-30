@@ -135,3 +135,51 @@ Rationale: These were direct dependencies and the API surface Ludex uses is stab
 Electron Builder is configured for Windows NSIS output in `apps/desktop/dist/release`.
 
 Rationale: The user-facing build command should keep desktop artifacts under `dist`, while `!dist/release/**/*` prevents generated installers from being included recursively in the packaged app.
+
+## 2026-05-29: Epic Manifest Scanner
+
+Phase 6 implements Epic Games detection in the Electron main process by reading `.item` manifests from `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests`.
+
+Rationale: Epic manifests contain the real `InstallLocation`, so Ludex can support games installed on any drive without probing all disks or assuming fixed paths.
+
+## 2026-05-29: Epic Launch Command Boundary
+
+Epic `LaunchCommand` is not sent to the API and is not executed by the desktop. `LaunchExecutable` is converted to `executable_path` only when it resolves inside `InstallLocation`, exists locally, and ends in `.exe`.
+
+Rationale: Epic launch command strings can contain launcher-specific arguments and should not become trusted commands. The safe MVP behavior is to preserve library sync and only keep a local executable path when it passes strict filesystem validation.
+
+## 2026-05-29: UX/UI Component Split
+
+The desktop UI was split out of the monolithic `App.tsx` into focused components for auth, app shell, library, game cards, details, scanner, settings, manual modal, and shared UI primitives.
+
+Rationale: The app now has enough real flows that visual consistency and maintenance are easier when layout, cards, buttons, badges, empty states, and feature surfaces have explicit ownership.
+
+## 2026-05-29: Electron Title and Menu
+
+The Electron window title is `Ludex`, and the default Windows application menu is removed with `Menu.setApplicationMenu(null)`.
+
+Rationale: The Japanese signature `ピコ~` belongs in the React UI, where the app controls rendering and styling. Removing the default menu keeps the desktop shell feeling like a product instead of a development wrapper.
+
+## 2026-05-29: Sidebar Visual Background
+
+The desktop sidebar uses a local vertical asset at `apps/desktop/src/assets/sidebar-bg.png` with dark blue overlays, subtle neon gradients, and glass cards for API/user status.
+
+Rationale: The Ludex identity should feel closer to Japanese cyber arcade without depending on remote runtime assets. The overlay stack keeps navigation and account text legible, and the image can be swapped later by replacing that local asset path and import in `AppShell.tsx`.
+
+## 2026-05-29: Reference-Driven Launcher Layout
+
+The Library screen now follows the approved launcher reference more closely: a stronger scenic sidebar, denser game grid, fixed right details panel, and compact scanner strip at the bottom of the library.
+
+Rationale: The MVP desktop should feel like a premium game launcher rather than a generic dashboard. Existing data and flows are preserved, while statistics and secondary blocks are visually reduced so game covers, selected state, play actions, and scanners match the intended Ludex hierarchy.
+
+## 2026-05-29: Design Preview Mode
+
+The desktop supports `VITE_DESIGN_PREVIEW=true` to render a visual-only filled library using local mock `UserGame` records.
+
+Rationale: UI fidelity against the launcher reference is hard to validate with an empty real library. Design preview does not sync games, does not write to the backend, and no-ops local launch/favorite actions for preview records.
+
+## 2026-05-29: Sidebar Background Framing
+
+The sidebar background image is rendered as an absolutely positioned `<img>` with `object-fit: cover` and `object-position: center bottom`. The source asset is cropped/resized to a sidebar-native 560x1840 composition, so it stays anchored and predictable across window heights.
+
+Rationale: The sidebar is a major identity surface. A vertical asset avoids the unstable framing of generic backgrounds, keeps the top cleaner for the logo, and preserves skyline/pagoda/sakura detail near the bottom while maintaining menu, account, and API status readability.

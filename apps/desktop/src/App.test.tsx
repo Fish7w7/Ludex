@@ -6,6 +6,7 @@ import { App } from "./App";
 const desktopMocks = vi.hoisted(() => ({
   launchGame: vi.fn(),
   revealGameInFolder: vi.fn(),
+  scanEpicGames: vi.fn(),
   scanSteamGames: vi.fn(),
   selectManualExecutable: vi.fn(),
   validateExecutablePath: vi.fn()
@@ -26,6 +27,14 @@ const steam = {
   name: "Steam",
   slug: "steam",
   scanner_key: "steam",
+  enabled: true
+};
+
+const epic = {
+  id: 2,
+  name: "Epic Games",
+  slug: "epic",
+  scanner_key: "epic",
   enabled: true
 };
 
@@ -137,6 +146,56 @@ const steamUserGame = {
   }
 };
 
+const epicDetectedGame = {
+  name: "Fortnite",
+  platform: "epic" as const,
+  source: "epic" as const,
+  external_id: "catalog-123",
+  install_path: "D:\\Epic Games\\Fortnite",
+  executable_path:
+    "D:\\Epic Games\\Fortnite\\FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe",
+  launch_command: null,
+  metadata: {
+    app_name: "Fortnite",
+    catalog_item_id: "catalog-123",
+    manifest_path:
+      "C:\\ProgramData\\Epic\\EpicGamesLauncher\\Data\\Manifests\\fortnite.item",
+    install_location: "D:\\Epic Games\\Fortnite",
+    launch_executable:
+      "FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe",
+    main_game_app_name: "Fortnite"
+  }
+};
+
+const epicUserGame = {
+  ...userGame,
+  id: 13,
+  game_id: 23,
+  platform_id: 2,
+  install_path: epicDetectedGame.install_path,
+  executable_path: epicDetectedGame.executable_path,
+  source: "epic",
+  external_id: "catalog-123",
+  metadata: epicDetectedGame.metadata,
+  game: {
+    ...userGame.game,
+    id: 23,
+    platform_id: 2,
+    external_id: "catalog-123",
+    name: "Fortnite",
+    slug: "fortnite"
+  },
+  platform: epic,
+  library: {
+    ...userGame.library,
+    id: 32,
+    platform_id: 2,
+    path: "D:\\Epic Games\\Fortnite",
+    label: "Epic Games Library",
+    source: "epic"
+  }
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -153,7 +212,7 @@ function mockAuthenticatedApi(games = [userGame]) {
     }
 
     if (url.endsWith("/platforms")) {
-      return jsonResponse({ data: [steam] });
+      return jsonResponse({ data: [steam, epic] });
     }
 
     if (url.endsWith("/user-games")) {
@@ -169,6 +228,10 @@ function mockAuthenticatedApi(games = [userGame]) {
 
       if (body.source === "steam") {
         return jsonResponse({ synced: 1, data: [steamUserGame] });
+      }
+
+      if (body.source === "epic") {
+        return jsonResponse({ synced: 1, data: [epicUserGame] });
       }
 
       return jsonResponse({ synced: 1, data: [manualGame] });
@@ -219,8 +282,9 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Biblioteca vazia")).toBeInTheDocument();
-    expect(screen.getByText("Importar jogos mockados")).toBeInTheDocument();
+    expect(await screen.findByText("Sua biblioteca ainda está vazia")).toBeInTheDocument();
+    expect(screen.getByText("Dev sync mock")).toBeInTheDocument();
+    expect(screen.queryByText("Counter-Strike 2")).not.toBeInTheDocument();
   });
 
   it("renders games loaded from the API", async () => {
@@ -268,8 +332,8 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByText("Biblioteca vazia");
-    await userEvent.click(screen.getAllByText("Adicionar jogo manual")[0]);
+    await screen.findByText("Sua biblioteca ainda está vazia");
+    await userEvent.click(screen.getByText("Adicionar primeiro jogo"));
     await userEvent.type(screen.getByLabelText("Nome do jogo"), "Meu Jogo");
     await userEvent.type(
       screen.getByLabelText("Caminho do executável"),
@@ -300,6 +364,7 @@ describe("App", () => {
         })
       );
     });
+    expect(fetchMock.mock.calls.filter(([input]) => input.toString().endsWith("/user-games"))).toHaveLength(2);
   });
 
   it("shows an error when trying to play a game without executable path", async () => {
@@ -350,7 +415,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByText("Biblioteca vazia");
+    await screen.findByText("Sua biblioteca ainda está vazia");
     await userEvent.click(screen.getByText("Scanner"));
     await userEvent.click(
       screen.getByRole("button", { name: "Escanear Steam" })
@@ -373,7 +438,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByText("Biblioteca vazia");
+    await screen.findByText("Sua biblioteca ainda está vazia");
     await userEvent.click(screen.getByText("Scanner"));
     await userEvent.click(
       screen.getByRole("button", { name: "Escanear Steam" })
@@ -403,6 +468,78 @@ describe("App", () => {
         })
       );
     });
+    expect(fetchMock.mock.calls.filter(([input]) => input.toString().endsWith("/user-games"))).toHaveLength(2);
+  });
+
+  it("shows Epic games found before importing", async () => {
+    desktopMocks.scanEpicGames.mockResolvedValue({
+      manifests_path:
+        "C:\\ProgramData\\Epic\\EpicGamesLauncher\\Data\\Manifests",
+      manifests_found: 1,
+      ignored_manifests: 0,
+      games: [epicDetectedGame]
+    });
+    window.localStorage.setItem("ludex.authToken", "test-token");
+    vi.stubGlobal("fetch", mockAuthenticatedApi([]));
+
+    render(<App />);
+
+    await screen.findByText("Sua biblioteca ainda está vazia");
+    await userEvent.click(screen.getByText("Scanner"));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Escanear Epic Games" })
+    );
+
+    expect(await screen.findByText("Fortnite")).toBeInTheDocument();
+    expect(screen.getByText("Epic ID catalog-123")).toBeInTheDocument();
+    expect(screen.getByText("D:\\Epic Games\\Fortnite")).toBeInTheDocument();
+  });
+
+  it("imports selected Epic games with platform epic", async () => {
+    const fetchMock = mockAuthenticatedApi([]);
+    desktopMocks.scanEpicGames.mockResolvedValue({
+      manifests_path:
+        "C:\\ProgramData\\Epic\\EpicGamesLauncher\\Data\\Manifests",
+      manifests_found: 1,
+      ignored_manifests: 0,
+      games: [epicDetectedGame]
+    });
+    window.localStorage.setItem("ludex.authToken", "test-token");
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByText("Sua biblioteca ainda está vazia");
+    await userEvent.click(screen.getByText("Scanner"));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Escanear Epic Games" })
+    );
+    await screen.findByText("Fortnite");
+    await userEvent.click(screen.getByText("Importar Epic (1)"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "http://127.0.0.1:8000/api/user-games/sync",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            source: "epic",
+            games: [
+              {
+                name: "Fortnite",
+                platform: "epic",
+                install_path: "D:\\Epic Games\\Fortnite",
+                executable_path:
+                  "D:\\Epic Games\\Fortnite\\FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe",
+                external_id: "catalog-123",
+                metadata: epicDetectedGame.metadata
+              }
+            ]
+          })
+        })
+      );
+    });
+    expect(fetchMock.mock.calls.filter(([input]) => input.toString().endsWith("/user-games"))).toHaveLength(2);
   });
 
   it("shows a friendly Steam not found error", async () => {
@@ -414,7 +551,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByText("Biblioteca vazia");
+    await screen.findByText("Sua biblioteca ainda está vazia");
     await userEvent.click(screen.getByText("Scanner"));
     await userEvent.click(
       screen.getByRole("button", { name: "Escanear Steam" })

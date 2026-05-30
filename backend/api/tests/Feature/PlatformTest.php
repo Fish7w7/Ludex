@@ -13,7 +13,7 @@ it('lists seeded platforms for authenticated users', function () {
         ->getJson('/api/platforms')
         ->assertOk()
         ->assertJsonFragment(['slug' => 'steam'])
-        ->assertJsonFragment(['slug' => 'epic-games'])
-        ->assertJsonFragment(['slug' => 'xbox-game-pass'])
+        ->assertJsonFragment(['slug' => 'epic'])
+        ->assertJsonFragment(['slug' => 'xbox'])
         ->assertJsonFragment(['slug' => 'manual']);
 });

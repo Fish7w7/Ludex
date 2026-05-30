@@ -20,13 +20,16 @@ The desktop should validate executable paths before launching:
 
 The desktop uses Electron with `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and a small preload bridge exposed as `window.ludexDesktop`.
 
+The default Electron application menu is removed for product polish. This does not grant renderer privileges or change the IPC boundary.
+
 Only explicit IPC methods are exposed:
 
 - select manual `.exe`;
 - validate executable path;
 - launch validated executable;
 - reveal validated file/folder;
-- scan Steam metadata.
+- scan Steam metadata;
+- scan Epic metadata.
 
 The renderer does not receive Node.js filesystem or process access.
 
@@ -44,6 +47,16 @@ Phase 5 SteamScanner only reads known Steam metadata files:
 - `appmanifest_*.acf`
 
 It does not scan whole disks for executables, does not execute anything during scan, and ignores missing library paths. Steam `appid` values are used as external IDs for sync. Any `steam://rungameid/{appid}` value is treated as metadata/future launch context only, not as a trusted command from the API.
+
+## Epic Scanner Safety
+
+Phase 6 EpicScanner only reads known Epic Games Launcher manifest files:
+
+- `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests\*.item`
+
+It does not scan whole disks, does not execute anything during scan, and does not trust Epic `LaunchCommand` values. Game install locations come from manifest `InstallLocation` and must exist locally.
+
+When a manifest includes `LaunchExecutable`, Ludex resolves it against `InstallLocation` and keeps it only if the normalized path stays inside that install folder, points to an existing `.exe`, and is not a URL or UNC path. Unsafe launch executable hints are discarded by setting `executable_path` to `null`.
 
 ## API Safety
 

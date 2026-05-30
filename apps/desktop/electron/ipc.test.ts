@@ -8,7 +8,8 @@ describe("Electron IPC contract", () => {
       "validateExecutablePath",
       "launchGame",
       "revealGameInFolder",
-      "scanSteamGames"
+      "scanSteamGames",
+      "scanEpicGames"
     ]);
   });
 
@@ -18,7 +19,8 @@ describe("Electron IPC contract", () => {
       "validate_executable_path",
       "launch_game",
       "reveal_game_in_folder",
-      "scan_steam_games"
+      "scan_steam_games",
+      "scan_epic_games"
     ]);
   });
 

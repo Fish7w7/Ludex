@@ -27,7 +27,7 @@ class DetectedGameSyncService
 
     private function syncGame(User $user, string $source, array $detectedGame): UserGame
     {
-        $platformKey = $detectedGame['platform'] ?? $source;
+        $platformKey = strtolower(trim($detectedGame['platform'] ?? $source));
         $platform = Platform::query()
             ->where('scanner_key', $platformKey)
             ->orWhere('slug', $platformKey)

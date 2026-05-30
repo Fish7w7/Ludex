@@ -3,7 +3,8 @@ export const ipcChannels = {
   validateExecutablePath: "validate_executable_path",
   launchGame: "launch_game",
   revealGameInFolder: "reveal_game_in_folder",
-  scanSteamGames: "scan_steam_games"
+  scanSteamGames: "scan_steam_games",
+  scanEpicGames: "scan_epic_games"
 } as const;
 
 export const desktopApiKeys = [
@@ -11,7 +12,8 @@ export const desktopApiKeys = [
   "validateExecutablePath",
   "launchGame",
   "revealGameInFolder",
-  "scanSteamGames"
+  "scanSteamGames",
+  "scanEpicGames"
 ] as const;
 
 export function requireStringArgument(value: unknown, label: string): string {
