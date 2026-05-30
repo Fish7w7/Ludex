@@ -1,31 +1,105 @@
 # Ludex `ピコ~`
 
-> Windows-first desktop launcher for PC games — one library, every platform.
+> Windows-first desktop game launcher — one library, multiple platforms.
 
-Ludex detects installed games from local launchers and manual `.exe` entries, displays them in a unified library, tracks play sessions, and syncs with a Laravel REST API.
+Ludex is a desktop launcher for PC games. It detects installed games from local launchers, supports manual `.exe` entries, displays everything in a unified library, tracks play sessions, and syncs with a Laravel REST API.
+
+The project currently focuses on a **Windows-first real-flow MVP** using Electron + React on the desktop and Laravel + PostgreSQL on the backend.
+
+---
+
+## Status
+
+Ludex is currently in a **stable pause-ready MVP state**.
+
+Implemented:
+
+* Electron + React desktop app
+* Laravel REST API
+* PostgreSQL backend via Docker
+* Login/register/logout with Laravel Sanctum
+* Real API-backed library
+* Manual `.exe` game import
+* Steam scanner
+* Epic Games scanner
+* Favorites
+* Game details panel
+* Play sessions
+* Open game folder
+* Launch local `.exe` when available
+* Design preview mode
+* Electron NSIS build
+* Test coverage for backend and desktop
+
+Not implemented yet:
+
+* Xbox/Game Pass scanner
+* Secure token storage
+* Offline/local cache
+* Automatic game process tracking
+* Real cover/metadata integration
+* Final app icon/installer branding
 
 ---
 
 ## Table of Contents
 
-- [Project Layout](#project-layout)
-- [Requirements](#requirements)
-- [Quick Start](#quick-start)
-- [Common Commands](#common-commands)
-- [Phases](#phases)
-- [Manual Test Flows](#manual-test-flows)
-- [Design Preview Mode](#design-preview-mode)
+* [Project Layout](#project-layout)
+* [Stack](#stack)
+* [Requirements](#requirements)
+* [Quick Start](#quick-start)
+* [Common Commands](#common-commands)
+* [Environment Variables](#environment-variables)
+* [Real End-to-End Test Flow](#real-end-to-end-test-flow)
+* [Manual Scanner](#manual-scanner)
+* [Steam Scanner](#steam-scanner)
+* [Epic Scanner](#epic-scanner)
+* [Design Preview Mode](#design-preview-mode)
+* [Testing](#testing)
+* [Build](#build)
+* [Known Issues](#known-issues)
+* [Roadmap](#roadmap)
+* [Project History](#project-history)
 
 ---
 
 ## Project Layout
 
-```
+```txt
 apps/desktop    Electron + React desktop application
 backend/api     Laravel REST API
-docs            Architecture, scanner, security, API, and decision docs
+docs            Architecture, scanner, security, API, status, and decision docs
 docker          Backend development/deploy container files
 ```
+
+---
+
+## Stack
+
+### Desktop
+
+* Electron
+* React
+* TypeScript
+* Vite
+* TailwindCSS
+* Electron Builder
+* Vitest
+
+### Backend
+
+* Laravel
+* Laravel Sanctum
+* PostgreSQL
+* Redis
+* Docker Compose
+* PHPUnit/Pest-compatible Laravel tests
+
+### Platform
+
+* Windows-first
+* Docker is used for backend development services only
+* End users should not need Docker
 
 ---
 
@@ -33,49 +107,71 @@ docker          Backend development/deploy container files
 
 ### Desktop
 
-| Tool | Version |
-|---|---|
-| Node.js | 22+ |
-| npm | bundled with Node |
+| Tool    | Version           |
+| ------- | ----------------- |
+| Node.js | 22+               |
+| npm     | bundled with Node |
 
-### Backend (outside Docker)
+### Backend outside Docker
 
-| Tool | Notes |
-|---|---|
-| PHP | 8.3+ |
-| Composer | latest stable |
-| Docker Desktop | for backend services |
+| Tool           | Version / Notes                                    |
+| -------------- | -------------------------------------------------- |
+| PHP            | 8.3+                                               |
+| Composer       | latest stable                                      |
+| Docker Desktop | required for PostgreSQL/Redis development services |
 
-**Required PHP extensions:** `openssl`, `curl`, `mbstring`, `fileinfo`, `pdo_pgsql`, `pdo_sqlite`, `zip`
+Required PHP extensions:
 
-> If `php --ini` reports no loaded `php.ini`, copy your PHP distribution's `php.ini-development` or `php.ini-production`, set `extension_dir` to the PHP `ext` directory, and enable the extensions above.
+```txt
+openssl
+curl
+mbstring
+fileinfo
+pdo_pgsql
+pdo_sqlite
+zip
+```
 
-Docker is **never** a requirement for end users. It is only used for backend development and deployment.
+If `php --ini` reports no loaded `php.ini`, copy your PHP distribution's `php.ini-development` or `php.ini-production`, rename it to `php.ini`, set `extension_dir` to the PHP `ext` directory, and enable the extensions above.
+
+Docker is **not** required for Ludex end users. It is only used for backend development/deployment.
 
 ---
 
 ## Quick Start
 
+Install dependencies:
+
 ```bash
-# Install all dependencies
 npm install
-
-# Set the API URL (bash)
-export VITE_API_URL=http://127.0.0.1:8000/api
-
-# Set the API URL (PowerShell)
-$env:VITE_API_URL="http://127.0.0.1:8000/api"
-
-# Start the desktop shell
-npm run desktop:dev
 ```
 
-Spin up the backend with Docker:
+Start the backend:
 
 ```bash
 docker compose up -d --build
 docker compose exec api composer install
 docker compose exec api php artisan migrate:fresh --seed
+```
+
+Set the API URL.
+
+PowerShell:
+
+```powershell
+$env:VITE_API_URL="http://127.0.0.1:8000/api"
+```
+
+Bash:
+
+```bash
+export VITE_API_URL=http://127.0.0.1:8000/api
+```
+
+Start the desktop app:
+
+```bash
+npm run desktop:dev
 ```
 
 Health check:
@@ -88,53 +184,55 @@ curl http://127.0.0.1:8000/api/health
 
 ## Common Commands
 
-| Command | Description |
-|---|---|
-| `npm install` | Install all workspace dependencies |
-| `npm run desktop:dev` | Start the Electron + Vite dev server |
-| `npm run desktop:test` | Run desktop tests |
-| `npm run desktop:build` | Build the renderer |
-| `npm run desktop:dist` | Package the Windows NSIS installer |
-| `npm run backend:up` | Start backend Docker services |
-| `npm run backend:down` | Stop backend Docker services |
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `npm install`           | Install workspace dependencies       |
+| `npm run desktop:dev`   | Start Electron + Vite in development |
+| `npm run desktop:test`  | Run desktop tests                    |
+| `npm run desktop:build` | Build the desktop renderer           |
+| `npm run desktop:dist`  | Package the Windows NSIS installer   |
+| `npm run backend:up`    | Start backend Docker services        |
+| `npm run backend:down`  | Stop backend Docker services         |
 
-`desktop:dist` produces the Windows installer under `apps/desktop/dist/release`. Vite renderer assets are written to `apps/desktop/dist`.
+Electron output:
 
----
+```txt
+apps/desktop/dist
+```
 
-## Phases
+Windows installer output:
 
-### Phase 1 — Foundation
-Monorepo scaffold (`apps/desktop` / `backend/api`), React + TypeScript + TailwindCSS shell, Laravel API skeleton with Sanctum/PostgreSQL/Redis/queues, Docker Compose for the backend, scanner contracts and stubs only.
-
-### Phase 2 — Core API
-Sanctum auth, platforms endpoint + seed data, Games CRUD, user game libraries (multi-drive), sync with deduplication, favorites, play sessions, playtime totals, user tags, scan logs, and feature tests.
-
-### Phase 3 — Desktop API Client
-Login/register/logout, current-user loading via Sanctum tokens, library dashboard backed by `/api/platforms` and `/api/user-games`, game details, favorites, mock sync, and manual play-session testing.
-
-### Phase 4 — Manual Scanner
-`.exe` selection through Electron's native file dialog, sync through `/api/user-games/sync` with `source: manual`, local launch from the saved `executable_path`, user-controlled play-session finish.
-
-### Phase 5 — Steam Scanner
-Windows registry + common-path Steam discovery, `libraryfolders.vdf` parsing across drives, `appmanifest_*.acf` parsing for installed games, sync with `source: steam` and `external_id` set to the Steam `appid`. No game execution during scanning.
-
-### Phase 6 — Epic Scanner
-Manifest discovery under `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests`, `.item` JSON parsing, install paths from `InstallLocation` (any drive), safe `LaunchExecutable` normalization only when inside `InstallLocation`, sync with `source: epic`. No game execution and no free-form launch commands during scanning.
-
-### UX/UI Polish
-Removed default Electron app menu, window title set to `Ludex`, React UI reorganized into focused layout/auth/library/scanner/settings/modal/primitive components. Dark neon identity applied to all screens. No new backend features or scanners added.
-
-### Electron Migration
-Replaced Tauri/Rust native commands with Electron main/preload IPC. Laravel API and Docker backend unchanged.
+```txt
+apps/desktop/dist/release
+```
 
 ---
 
-## Manual Test Flows
+## Environment Variables
 
-### Real End-to-End Flow
+### Required for desktop API access
 
-Use this flow when you want to test Ludex with real API data and real local game paths. Do **not** enable `VITE_DESIGN_PREVIEW`.
+```txt
+VITE_API_URL=http://127.0.0.1:8000/api
+```
+
+### Optional design preview mode
+
+```txt
+VITE_DESIGN_PREVIEW=true
+```
+
+Use `VITE_DESIGN_PREVIEW=true` only when you want to preview the UI with fake visual entries. It does not sync data and does not write to PostgreSQL.
+
+---
+
+## Real End-to-End Test Flow
+
+Use this flow to test Ludex with real API data and real local game paths.
+
+Do **not** enable `VITE_DESIGN_PREVIEW`.
+
+PowerShell:
 
 ```powershell
 docker compose up -d --build
@@ -143,8 +241,11 @@ docker compose exec api php artisan migrate:fresh --seed
 
 $env:VITE_API_URL="http://127.0.0.1:8000/api"
 Remove-Item Env:\VITE_DESIGN_PREVIEW -ErrorAction SilentlyContinue
+
 npm run desktop:dev
 ```
+
+Then, inside the app:
 
 1. Register or log in.
 2. Add a real local `.exe` with **Adicionar jogo**.
@@ -152,86 +253,142 @@ npm run desktop:dev
 4. Open **Scanner** and run **Escanear Epic Games** if Epic Games Launcher is installed.
 5. Import selected games.
 6. Confirm the games appear in **Library** from `/api/user-games`.
-7. Open details, favorite/unfavorite, use **Abrir pasta**, and use **Jogar** only when `executable_path` points to a valid local `.exe`.
+7. Open game details.
+8. Favorite/unfavorite a game.
+9. Use **Abrir pasta**.
+10. Use **Jogar** only when `executable_path` points to a valid local `.exe`.
 
-Seeded platform keys expected by sync are `steam`, `epic`, `manual`, and `xbox`.
+Expected platform slugs used by sync:
 
-### Phase 3 — Mock Library
-
-This is a development helper only. The real library uses API data from `/api/user-games`.
-
-```bash
-# 1. Start the backend
-docker compose up -d --build
-docker compose exec api composer install
-docker compose exec api php artisan migrate:fresh --seed
-
-# 2. Start the desktop
-export VITE_API_URL=http://127.0.0.1:8000/api
-npm run desktop:dev
+```txt
+steam
+epic
+manual
+xbox
 ```
-
-1. Register or log in.
-2. Click **Dev sync mock**.
-3. Confirm the library shows Counter-Strike 2, Hades, and Epic Seven.
-4. Open a game, favorite/unfavorite it, then start and finish a play session.
 
 ---
 
-### Phase 4 — Manual Scanner
+## Manual Scanner
+
+The Manual Scanner lets the user add a local Windows `.exe` manually.
+
+Run:
 
 ```powershell
 $env:VITE_API_URL="http://127.0.0.1:8000/api"
 npm run desktop:dev
 ```
+
+Flow:
 
 1. Register or log in.
 2. Click **Adicionar jogo** or **Adicionar primeiro jogo**.
-3. Click **Selecionar .exe** and choose a local Windows `.exe`.
-4. Confirm or edit the game name, then click **Adicionar à biblioteca**.
-5. Open the game and use **Jogar** to launch it.
-6. Use **Finalizar** to close the play session.
-7. Use **Abrir pasta** to open the saved install folder.
+3. Click **Selecionar .exe**.
+4. Choose a local Windows `.exe`.
+5. Confirm or edit the game name.
+6. Click **Adicionar à biblioteca**.
+7. Open the game details.
+8. Use **Jogar** to launch it.
+9. Use **Finalizar sessão** to close the manual play session.
+10. Use **Abrir pasta** to open the saved install folder.
+
+Security notes:
+
+* Only local `.exe` files are accepted.
+* The app does not execute arbitrary commands from the API.
+* Manual execution is user-confirmed.
 
 ---
 
-### Phase 5 — Steam Scanner
+## Steam Scanner
+
+The Steam Scanner detects installed Steam games by reading Steam metadata files.
+
+It supports multiple Steam libraries across drives such as:
+
+```txt
+C:
+D:
+E:
+G:
+```
+
+It reads:
+
+```txt
+libraryfolders.vdf
+appmanifest_*.acf
+```
+
+Run:
 
 ```powershell
 $env:VITE_API_URL="http://127.0.0.1:8000/api"
 npm run desktop:dev
 ```
 
-1. Register or log in.
-2. Open **Scanners** → **Escanear Steam**.
-3. Review the detected Steam libraries and games.
-4. Select games to import and click **Importar selecionados**.
-5. Return to the library and confirm the imported games appear.
+Flow:
 
-> The SteamScanner reads Steam metadata files only — it does not launch Steam games during scanning.
+1. Register or log in.
+2. Open **Scanner**.
+3. Click **Escanear Steam**.
+4. Review detected Steam libraries and games.
+5. Select games.
+6. Click **Importar selecionados**.
+7. Return to **Library** and confirm the imported games appear.
+
+Security notes:
+
+* SteamScanner only reads local Steam metadata files.
+* It does not execute Steam games during scanning.
+* Steam protocol launch commands are not treated as trusted commands.
 
 ---
 
-### Phase 6 — Epic Scanner
+## Epic Scanner
+
+The Epic Scanner detects installed Epic Games by reading local `.item` manifest files.
+
+Default manifest path:
+
+```txt
+C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests
+```
+
+It uses `InstallLocation` from the manifest, so games can be installed on any drive.
+
+Run:
 
 ```powershell
 $env:VITE_API_URL="http://127.0.0.1:8000/api"
 npm run desktop:dev
 ```
 
-1. Register or log in.
-2. Open **Scanner** → **Escanear Epic Games**.
-3. Review the detected Epic manifests and games.
-4. Select games to import and click **Importar Epic**.
-5. Return to the library and confirm the imported games appear.
+Flow:
 
-> The EpicScanner reads local `.item` manifests only — it does not execute games and does not use `LaunchCommand` as a trusted command.
+1. Register or log in.
+2. Open **Scanner**.
+3. Click **Escanear Epic Games**.
+4. Review detected Epic manifests and games.
+5. Select games.
+6. Click **Importar Epic**.
+7. Return to **Library** and confirm the imported games appear.
+
+Security notes:
+
+* EpicScanner only reads local `.item` manifests.
+* `LaunchCommand` is not trusted or executed.
+* `LaunchExecutable` is only normalized when it safely resolves inside `InstallLocation`.
+* Only valid local `.exe` paths are accepted.
 
 ---
 
 ## Design Preview Mode
 
-Validate the Ludex UI with a filled library without touching the backend database.
+Design Preview Mode fills the UI with visual-only entries so the launcher layout can be reviewed without touching the backend database.
+
+PowerShell:
 
 ```powershell
 $env:VITE_API_URL="http://127.0.0.1:8000/api"
@@ -239,4 +396,178 @@ $env:VITE_DESIGN_PREVIEW="true"
 npm run desktop:dev
 ```
 
-Renders visual-only entries for Counter-Strike 2, Hades, Fortnite, Epic Seven, Need for Speed Heat, Hollow Knight, Genshin Impact, and Sekiro. No sync calls, no PostgreSQL writes, and launch/favorite actions give local visual feedback only.
+Preview entries include:
+
+* Counter-Strike 2
+* Hades
+* Fortnite
+* Epic Seven
+* Need for Speed Heat
+* Hollow Knight
+* Genshin Impact
+* Sekiro
+
+Design preview behavior:
+
+* No sync calls
+* No PostgreSQL writes
+* No real game launch
+* No backend mutation
+* Visual feedback only
+
+Disable preview:
+
+```powershell
+Remove-Item Env:\VITE_DESIGN_PREVIEW -ErrorAction SilentlyContinue
+```
+
+---
+
+## Testing
+
+Desktop tests:
+
+```bash
+npm run desktop:test
+```
+
+Desktop build:
+
+```bash
+npm run desktop:build
+```
+
+Desktop installer:
+
+```bash
+npm run desktop:dist
+```
+
+Backend tests locally:
+
+```bash
+cd backend/api
+php artisan test
+```
+
+Backend tests in Docker:
+
+```bash
+docker compose exec -T api php artisan test
+```
+
+Recommended validation before pausing or committing:
+
+```bash
+npm run desktop:test
+npm run desktop:build
+docker compose exec -T api php artisan test
+```
+
+---
+
+## Build
+
+Build renderer:
+
+```bash
+npm run desktop:build
+```
+
+Generate Windows installer:
+
+```bash
+npm run desktop:dist
+```
+
+Output:
+
+```txt
+apps/desktop/dist/release
+```
+
+Known note:
+
+If `desktop:dist` fails with an `EPERM` error related to `esbuild`, try closing any running Electron/Vite processes and rerun the command outside sandboxed environments.
+
+---
+
+## Known Issues
+
+* Xbox/Game Pass scanner is not implemented yet.
+* Secure token storage is still pending.
+* Offline/local cache is still pending.
+* Automatic game process closing detection is not implemented.
+* External cover/metadata fetching is not implemented.
+* Final app icon and installer branding are still placeholders.
+* Steam and Epic scanning depend on local launcher metadata existing on the user's PC.
+* Some games may not expose a reliable `.exe` path through launcher metadata.
+* UI is functional but still subject to visual refinement.
+
+---
+
+## Roadmap
+
+### High Priority
+
+* Secure storage for auth token
+* Automatic process tracking for launched games
+* Test installer on a clean Windows machine
+* Improve real-flow error handling
+* Final app icon and installer metadata
+
+### Medium Priority
+
+* Local offline cache
+* External metadata/covers
+* Better game search/filter/sorting
+* Better library empty states
+* More polished installer flow
+
+### Low Priority
+
+* Xbox/Game Pass scanner
+* Themes
+* Extra animations
+* Public profile/social features
+* Cloud sync improvements
+
+---
+
+## Project History
+
+### Phase 1 — Foundation
+
+Monorepo scaffold with `apps/desktop` and `backend/api`, React + TypeScript + TailwindCSS shell, Laravel API skeleton, Sanctum/PostgreSQL/Redis backend foundation, Docker Compose, scanner contracts, and docs.
+
+### Phase 2 — Core API
+
+Sanctum auth, platform seed data, Games CRUD, user game libraries, sync with deduplication, favorites, play sessions, playtime totals, tags, scan logs, and feature tests.
+
+### Phase 3 — Desktop API Client
+
+Electron/React desktop connected to Laravel API with login/register/logout, current-user loading, library dashboard, game details, favorites, mock sync, and manual play-session testing.
+
+### Phase 4 — Manual Scanner
+
+Manual `.exe` selection through Electron native file dialog, sync through `/api/user-games/sync`, local launch from saved `executable_path`, and user-controlled play-session finish.
+
+### Phase 5 — Steam Scanner
+
+Steam discovery through registry/common paths, `libraryfolders.vdf` parsing, multi-drive library support, `appmanifest_*.acf` parsing, and sync with `source: steam`.
+
+### Phase 6 — Epic Scanner
+
+Epic manifest discovery under `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests`, `.item` JSON parsing, install paths from `InstallLocation`, safe executable normalization, and sync with `source: epic`.
+
+### Electron Migration
+
+Replaced Tauri/Rust native commands with Electron main/preload IPC. Laravel API and Docker backend remained unchanged.
+
+### UX/UI Polish
+
+Removed default Electron menu, simplified titlebar to `Ludex`, reorganized React UI into focused layout/auth/library/scanner/settings/modal/primitive components, added dark neon identity, sidebar background, library grid, scanner cards, and detail panel.
+
+### Real-Flow Stabilization
+
+Reduced mock dependency, moved mock sync to development-only flow, fixed platform slug mismatch, normalized sync platforms, improved import refresh, and ensured the main library uses real API data unless `VITE_DESIGN_PREVIEW=true`.
